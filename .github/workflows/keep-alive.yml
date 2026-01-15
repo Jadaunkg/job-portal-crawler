@@ -1,0 +1,28 @@
+name: Keep Render Service Alive
+
+on:
+  schedule:
+    # Run every 10 minutes (prevent 15-minute spin down)
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API Health Endpoint
+        run: |
+          echo "Pinging API to keep it alive..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.RENDER_API_URL }}/health)
+          echo "Response code: $response"
+          
+          if [ $response -eq 200 ]; then
+            echo "✓ API is alive and responsive"
+          else
+            echo "⚠ API returned status code: $response"
+          fi
+      
+      - name: Ping System Status
+        run: |
+          echo "Checking system status..."
+          curl -s ${{ secrets.RENDER_API_URL }}/api/system/status || echo "Status check failed"

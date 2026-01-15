@@ -1,6 +1,7 @@
 """
 FastAPI application entry point.
 """
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -12,6 +13,11 @@ from .routes_admitcards import router as admit_cards_router
 from .routes_system import router as system_router
 from .routes_refresh import router as refresh_router
 from .routes_details import router as details_router
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.keep_alive import get_keep_alive_service
 
 
 def create_app() -> FastAPI:
@@ -70,6 +76,27 @@ def create_app() -> FastAPI:
     def health_check():
         """Simple health check endpoint."""
         return {"status": "ok"}
+    
+    # ==================== Startup/Shutdown Events ====================
+    @app.on_event("startup")
+    async def startup_event():
+        """Initialize services on startup."""
+        # Enable keep-alive only on Render (not locally)
+        if os.getenv("RENDER"):
+            base_url = os.getenv("RENDER_EXTERNAL_URL")
+            if base_url:
+                keep_alive = get_keep_alive_service(base_url)
+                if keep_alive:
+                    keep_alive.start()
+                    print(f"✓ Keep-alive service started for {base_url}")
+    
+    @app.on_event("shutdown")
+    async def shutdown_event():
+        """Cleanup on shutdown."""
+        from utils.keep_alive import _keep_alive_service
+        if _keep_alive_service:
+            await _keep_alive_service.stop()
+            print("✓ Keep-alive service stopped")
     
     # ==================== Exception Handlers ====================
     @app.exception_handler(404)
