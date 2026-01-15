@@ -3,13 +3,15 @@ Pydantic schemas for API request/response validation.
 """
 from typing import Any, Dict, List, Optional
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # ==================== Base Response Models ====================
 
 class DetailedInfoSchema(BaseModel):
     """Schema for detailed_info extracted from pages."""
+    model_config = ConfigDict(extra="allow", validate_assignment=True)
+    
     description: Optional[str] = None
     tables: Optional[List[Dict[str, Any]]] = None
     links: Optional[Dict[str, Any]] = None
@@ -20,53 +22,47 @@ class DetailedInfoSchema(BaseModel):
     total_posts: Optional[str] = None
     vacancy_details: Optional[Dict[str, Any]] = None
 
-    class Config:
-        extra = "allow"
-
 
 class JobResponseSchema(BaseModel):
     """Schema for Job response."""
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
+    
     id: str
-    title: str
-    posted_date: str
-    url: str
-    portal: str
-    scraped_at: str
+    title: Optional[str] = None
+    posted_date: Optional[str] = None
+    url: Optional[str] = None
+    portal: Optional[str] = None
+    scraped_at: Optional[str] = None
     details_crawled: bool = False
-    detailed_info: Optional[DetailedInfoSchema] = None
-
-    class Config:
-        from_attributes = True
+    detailed_info: Optional[Dict[str, Any]] = None
 
 
 class ResultResponseSchema(BaseModel):
     """Schema for Exam Result response."""
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
+    
     id: str
-    title: str
-    posted_date: str
-    url: str
-    portal: str
-    scraped_at: str
+    title: Optional[str] = None
+    posted_date: Optional[str] = None
+    url: Optional[str] = None
+    portal: Optional[str] = None
+    scraped_at: Optional[str] = None
     details_crawled: bool = False
-    detailed_info: Optional[DetailedInfoSchema] = None
-
-    class Config:
-        from_attributes = True
+    detailed_info: Optional[Dict[str, Any]] = None
 
 
 class AdmitCardResponseSchema(BaseModel):
     """Schema for Admit Card response."""
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
+    
     id: str
-    title: str
-    posted_date: str
-    url: str
-    portal: str
-    scraped_at: str
+    title: Optional[str] = None
+    posted_date: Optional[str] = None
+    url: Optional[str] = None
+    portal: Optional[str] = None
+    scraped_at: Optional[str] = None
     details_crawled: bool = False
-    detailed_info: Optional[DetailedInfoSchema] = None
-
-    class Config:
-        from_attributes = True
+    detailed_info: Optional[Dict[str, Any]] = None
 
 
 # ==================== Pagination Response Models ====================

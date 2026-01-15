@@ -34,10 +34,10 @@ def create_app() -> FastAPI:
     )
     
     # ==================== Register Routers ====================
-    app.include_router(jobs_router)
-    app.include_router(results_router)
-    app.include_router(admit_cards_router)
-    app.include_router(system_router)
+    app.include_router(jobs_router, prefix="/api")
+    app.include_router(results_router, prefix="/api")
+    app.include_router(admit_cards_router, prefix="/api")
+    app.include_router(system_router, prefix="/api")
     
     # ==================== Root Endpoint ====================
     @app.get(

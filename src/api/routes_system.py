@@ -9,7 +9,7 @@ from typing import Dict, Any
 from .schemas import StatusResponse, StatsResponse, PortalStatsResponse
 from .database import ApiDatabase
 
-router = APIRouter(prefix="/api", tags=["System"])
+router = APIRouter(tags=["System"])
 db = ApiDatabase()
 
 # Track API startup time
@@ -18,7 +18,7 @@ total_requests = 0
 
 
 @router.get(
-    "/status",
+    "/system/status",
     response_model=StatusResponse,
     summary="API health check",
     description="Get API status and health information"
@@ -52,7 +52,7 @@ def get_status():
 
 
 @router.get(
-    "/stats",
+    "/system/stats",
     response_model=StatsResponse,
     summary="Database statistics",
     description="Get comprehensive database statistics"
@@ -79,7 +79,7 @@ def get_stats():
 
 
 @router.get(
-    "/stats/by-portal",
+    "/system/stats/by-portal",
     response_model=list[PortalStatsResponse],
     summary="Statistics per portal",
     description="Get item counts for each portal"
