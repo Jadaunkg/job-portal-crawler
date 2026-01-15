@@ -1,0 +1,95 @@
+# Application Settings
+
+scheduler:
+  # Interval in minutes between crawler runs
+  interval_minutes: 15
+  
+  # Maximum number of crawlers to run concurrently
+  max_concurrent_crawlers: 2
+  
+  # Whether to run on startup
+  run_on_startup: true
+
+storage:
+  # Storage type (currently only 'json' supported)
+  type: "json"
+  
+  # Directory for data files
+  data_dir: "data"
+  
+  # Enable automatic backups
+  backup_enabled: true
+  
+  # Maximum number of backup files to keep
+  max_backups: 10
+  
+  # Backup every N updates (0 = backup on every write)
+  backup_frequency: 5
+
+crawler:
+  # Request timeout in seconds
+  timeout_seconds: 30
+  
+  # Maximum retry attempts for failed requests
+  max_retries: 3
+  
+  # Delay between retries in seconds (exponential backoff)
+  retry_delay: 2
+  
+  # User agent string
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  
+  # Respect robots.txt
+  respect_robots_txt: true
+  
+  # Delay between requests to same domain (seconds)
+  request_delay: 1
+  
+  # Maximum pages to crawl per portal per run
+  max_pages_per_run: 50
+
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+  
+  # Log file path
+  file_path: "logs/crawler.log"
+  
+  # Maximum log file size in MB (0 = unlimited)
+  max_size_mb: 10
+  
+  # Number of backup log files to keep
+  backup_count: 5
+  
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Enable colored console output
+  colored_console: true
+
+notifications:
+  # Enable notifications
+  enabled: false
+  
+  # Email notifications (requires SMTP configuration in .env)
+  email:
+    enabled: false
+    recipients: []
+    send_on_new_items: true
+    send_daily_summary: false
+    summary_time: "18:00"
+  
+  # Desktop notifications
+  desktop:
+    enabled: false
+
+# Portal monitoring
+monitoring:
+  # Enable health checks
+  enabled: true
+  
+  # Alert if crawler fails N times consecutively
+  alert_threshold: 3
+  
+  # Track performance metrics
+  track_performance: true

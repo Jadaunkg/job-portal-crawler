@@ -1,0 +1,74 @@
+[
+  {
+    "id": "Sarkari Results_20260115_165838",
+    "portal_name": "Sarkari Results",
+    "crawl_time": "2026-01-15T16:58:38.287080",
+    "status": "success",
+    "items_found": 300,
+    "new_items": 0,
+    "duration_seconds": 4.649013,
+    "error_message": null,
+    "categories_crawled": [
+      "jobs",
+      "results",
+      "admit_cards"
+    ],
+    "metadata": {}
+  },
+  {
+    "id": "Sarkari Results_20260115_165826",
+    "portal_name": "Sarkari Results",
+    "crawl_time": "2026-01-15T16:58:26.389805",
+    "status": "success",
+    "items_found": 300,
+    "new_items": 0,
+    "duration_seconds": 5.445092,
+    "error_message": null,
+    "categories_crawled": [
+      "jobs",
+      "results",
+      "admit_cards"
+    ],
+    "metadata": {}
+  },
+  {
+    "id": "Sarkari Results_20260115_165613",
+    "portal_name": "Sarkari Results",
+    "crawl_time": "2026-01-15T16:56:13.189070",
+    "status": "success",
+    "items_found": 300,
+    "new_items": 300,
+    "duration_seconds": 5.264037,
+    "error_message": null,
+    "categories_crawled": [
+      "jobs",
+      "results",
+      "admit_cards"
+    ],
+    "metadata": {}
+  },
+  {
+    "id": "Sarkari Results_20260115_165248",
+    "portal_name": "Sarkari Results",
+    "crawl_time": "2026-01-15T16:52:48.579334",
+    "status": "success",
+    "items_found": 0,
+    "new_items": 0,
+    "duration_seconds": 4.989904,
+    "error_message": null,
+    "categories_crawled": [],
+    "metadata": {}
+  },
+  {
+    "id": "Sarkari Results_20260115_164812",
+    "portal_name": "Sarkari Results",
+    "crawl_time": "2026-01-15T16:48:12.553336",
+    "status": "success",
+    "items_found": 0,
+    "new_items": 0,
+    "duration_seconds": 0.033423,
+    "error_message": null,
+    "categories_crawled": [],
+    "metadata": {}
+  }
+]

@@ -1,0 +1,56 @@
+2026-01-15 16:48:12 - job_crawler - INFO - Running crawlers once...
+2026-01-15 16:48:12 - job_crawler - INFO - 
+============================================================
+2026-01-15 16:48:12 - job_crawler - INFO - Execution Summary:
+2026-01-15 16:48:12 - job_crawler - INFO - Status: completed
+2026-01-15 16:48:12 - job_crawler - INFO - Portals crawled: 1
+2026-01-15 16:48:12 - job_crawler - INFO - New items found: 0
+2026-01-15 16:48:12 - job_crawler - INFO - Duration: 0.06s
+2026-01-15 16:48:12 - job_crawler - INFO - ============================================================
+2026-01-15 16:52:43 - job_crawler - INFO - Running crawlers once...
+2026-01-15 16:52:48 - job_crawler - INFO - 
+============================================================
+2026-01-15 16:52:48 - job_crawler - INFO - Execution Summary:
+2026-01-15 16:52:48 - job_crawler - INFO - Status: completed
+2026-01-15 16:52:48 - job_crawler - INFO - Portals crawled: 1
+2026-01-15 16:52:48 - job_crawler - INFO - New items found: 0
+2026-01-15 16:52:48 - job_crawler - INFO - Duration: 5.01s
+2026-01-15 16:52:48 - job_crawler - INFO - ============================================================
+2026-01-15 16:56:07 - job_crawler - INFO - Running crawlers once...
+2026-01-15 16:56:13 - job_crawler - INFO - 
+============================================================
+2026-01-15 16:56:13 - job_crawler - INFO - Execution Summary:
+2026-01-15 16:56:13 - job_crawler - INFO - Status: completed
+2026-01-15 16:56:13 - job_crawler - INFO - Portals crawled: 1
+2026-01-15 16:56:13 - job_crawler - INFO - New items found: 300
+2026-01-15 16:56:13 - job_crawler - INFO - Duration: 5.28s
+2026-01-15 16:56:13 - job_crawler - INFO - ============================================================
+2026-01-15 16:58:20 - job_crawler - INFO - Running crawlers once...
+2026-01-15 16:58:26 - job_crawler - INFO - 
+============================================================
+2026-01-15 16:58:26 - job_crawler - INFO - Execution Summary:
+2026-01-15 16:58:26 - job_crawler - INFO - Status: completed
+2026-01-15 16:58:26 - job_crawler - INFO - Portals crawled: 1
+2026-01-15 16:58:26 - job_crawler - INFO - New items found: 0
+2026-01-15 16:58:26 - job_crawler - INFO - Duration: 5.47s
+2026-01-15 16:58:26 - job_crawler - INFO - ============================================================
+2026-01-15 16:58:33 - job_crawler - INFO - Running crawlers once...
+2026-01-15 16:58:38 - job_crawler - INFO - 
+============================================================
+2026-01-15 16:58:38 - job_crawler - INFO - Execution Summary:
+2026-01-15 16:58:38 - job_crawler - INFO - Status: completed
+2026-01-15 16:58:38 - job_crawler - INFO - Portals crawled: 1
+2026-01-15 16:58:38 - job_crawler - INFO - New items found: 0
+2026-01-15 16:58:38 - job_crawler - INFO - Duration: 4.68s
+2026-01-15 16:58:38 - job_crawler - INFO - ============================================================
+2026-01-15 17:09:32 - job_crawler - INFO - Starting detail crawl for jobs...
+2026-01-15 17:09:32 - job_crawler - INFO - Crawling job details from: https://sarkariresult.com.cm/rbi-bank-office-attendant-recruitment-2026/
+2026-01-15 17:09:34 - job_crawler - WARNING - Could not find main content area for https://sarkariresult.com.cm/rbi-bank-office-attendant-recruitment-2026/
+2026-01-15 17:10:38 - job_crawler - INFO - Starting detail crawl for jobs...
+2026-01-15 17:10:38 - job_crawler - INFO - Crawling job details from: https://sarkariresult.com.cm/rbi-bank-office-attendant-recruitment-2026/
+2026-01-15 17:13:33 - job_crawler - INFO - Starting detail crawl for jobs...
+2026-01-15 17:13:33 - job_crawler - INFO - Crawling job details from: https://sarkariresult.com.cm/rbi-bank-office-attendant-recruitment-2026/
+2026-01-15 17:13:54 - job_crawler - INFO - Starting detail crawl for results...
+2026-01-15 17:13:54 - job_crawler - INFO - Crawling result details from: https://sarkariresult.com.cm/ibps-po-mt-xv-15-final-result-2026/
+2026-01-15 17:14:05 - job_crawler - INFO - Starting detail crawl for admit_cards...
+2026-01-15 17:14:05 - job_crawler - INFO - Crawling admit card details from: https://sarkariresult.com.cm/bpsc-70th-interview-letter-2026/

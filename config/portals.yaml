@@ -1,0 +1,84 @@
+# Portal Configurations
+# Add your job portal configurations here
+
+portals:
+  # Sarkari Results - Job Notification Portal
+  - name: "Sarkari Results"
+    enabled: true
+    base_url: "https://www.sarkariresult.com.cm"
+    description: "Sarkari job result and admit card notifications"
+    
+    # Categories to scrape
+    categories:
+      jobs:
+        enabled: true
+        url: "https://www.sarkariresult.com.cm/latest-jobs/"
+        selectors:
+          container: "ul.latest-posts-last-date li"
+          title: "a"
+          link: "a"
+          organization: null
+          posted_date: null
+      
+      results:
+        enabled: true
+        url: "https://www.sarkariresult.com.cm/result/"
+        selectors:
+          container: "ul.wp-block-latest-posts li"
+          title: "a.wp-block-latest-posts__post-title"
+          link: "a.wp-block-latest-posts__post-title"
+          organization: null
+          result_date: null
+        
+        pagination:
+          enabled: false
+      
+      admit_cards:
+        enabled: true
+        url: "https://www.sarkariresult.com.cm/admit-card/"
+        selectors:
+          container: "ul.wp-block-latest-posts li"
+          title: "a.wp-block-latest-posts__post-title"
+          link: "a.wp-block-latest-posts__post-title"
+          exam_date: null
+        
+        pagination:
+          enabled: false
+
+  # Example Portal 2 - Template
+  - name: "ExamplePortal2"
+    enabled: false
+    base_url: "https://example2.com"
+    description: "Another example portal"
+    
+    categories:
+      jobs:
+        enabled: true
+        url: "https://example2.com/latest-jobs"
+        selectors:
+          container: "article.job-post"
+          title: "h1.title"
+          organization: "div.company"
+          post_date: "time.posted"
+          last_date: "time.expires"
+          location: "span.loc"
+          link: "a.permalink"
+          description: "div.content"
+          category: "span.cat"
+        
+        pagination:
+          enabled: true
+          next_button_selector: "li.next > a"
+          max_pages: 3
+
+  # Add more portals as needed
+  # - name: "Portal3"
+  #   enabled: false
+  #   ...
+
+# Notes:
+# - Set 'enabled: true' only for portals you want to actively crawl
+# - Selectors use CSS selector syntax
+# - Use browser DevTools to inspect and find correct selectors
+# - Test selectors before enabling a portal
+# - Some portals may require JavaScript rendering (consider Selenium)
