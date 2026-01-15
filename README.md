@@ -15,6 +15,7 @@ A production-grade Python-based job portal crawler system that collects job post
 - **Automatic Scheduling**: Background job every 15-20 minutes via APScheduler
 - **Thread-Safe Database**: JSON-based storage with file locking
 - **CLI Interface**: User-friendly command-line interface with list → select → crawl → view workflow
+- **RESTful API**: Complete REST API for live access to crawled data
 - **Comprehensive Logging**: Rotating log files with color output
 - **Category Support**: Jobs, Exam Results, and Admit Cards
 
