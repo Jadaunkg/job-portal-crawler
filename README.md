@@ -366,7 +366,7 @@ MIT License - See LICENSE file for details
 
 ## Author 👤
 
-Created by Visha Khadaun
+Created by Vishal Jadaun
 
 ## Support 💬
 
