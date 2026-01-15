@@ -65,7 +65,7 @@ def get_detail_crawler() -> DetailCrawler:
 
 
 @router.post(
-    "/api/details/fetch",
+    "/details/fetch",
     response_model=DetailFetchResponse,
     summary="Fetch detailed information from URL",
     description="Crawls a URL in real-time to extract complete information. Useful for enriching jobs, results, or admit cards before publishing."
@@ -164,7 +164,7 @@ def fetch_details(request: DetailFetchRequest) -> DetailFetchResponse:
 
 
 @router.get(
-    "/api/details/fetch",
+    "/details/fetch",
     response_model=DetailFetchResponse,
     summary="Fetch detailed information from URL (GET)",
     description="GET variant for fetching details. Simpler for direct URL access."
@@ -197,7 +197,7 @@ def fetch_details_get(
 
 
 @router.post(
-    "/api/details/batch",
+    "/details/batch",
     summary="Fetch details for multiple URLs",
     description="Fetch details for multiple URLs in one request."
 )
