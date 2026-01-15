@@ -4,7 +4,7 @@ Crawls a URL in real-time and returns complete details.
 """
 from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import logging
 
 from src.crawler.detail_crawler import DetailCrawler
@@ -202,7 +202,7 @@ def fetch_details_get(
     description="Fetch details for multiple URLs in one request."
 )
 def fetch_details_batch(
-    urls: list[str] = Query(..., description="List of URLs to crawl"),
+    urls: List[str] = Query(..., description="List of URLs to crawl"),
     content_type: Optional[str] = Query(default="auto")
 ) -> Dict[str, Any]:
     """
