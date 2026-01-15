@@ -10,7 +10,7 @@ from .schemas import (
 )
 from .database import ApiDatabase
 
-router = APIRouter(prefix="/api/admit-cards", tags=["Admit Cards"])
+router = APIRouter(prefix="/admit-cards", tags=["Admit Cards"])
 db = ApiDatabase()
 
 
