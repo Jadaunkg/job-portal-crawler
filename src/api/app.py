@@ -10,6 +10,7 @@ from .routes_jobs import router as jobs_router
 from .routes_results import router as results_router
 from .routes_admitcards import router as admit_cards_router
 from .routes_system import router as system_router
+from .routes_refresh import router as refresh_router
 
 
 def create_app() -> FastAPI:
@@ -38,6 +39,7 @@ def create_app() -> FastAPI:
     app.include_router(results_router, prefix="/api")
     app.include_router(admit_cards_router, prefix="/api")
     app.include_router(system_router, prefix="/api")
+    app.include_router(refresh_router, prefix="/api")
     
     # ==================== Root Endpoint ====================
     @app.get(

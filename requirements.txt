@@ -24,6 +24,7 @@ colorlog==6.8.2
 fastapi==0.104.1
 uvicorn==0.24.0
 pydantic==2.5.0
+gunicorn==21.2.0
 
 # Optional: For JavaScript-heavy sites (uncomment if needed)
 # selenium==4.16.0

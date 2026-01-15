@@ -1,0 +1,85 @@
+name: Scheduled Crawler Refresh
+
+on:
+  schedule:
+    # Run crawler every 2 hours (more frequent = more free tier quota used)
+    - cron: '0 */2 * * *'
+  
+  # Also allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Reason for manual refresh'
+        required: false
+        default: 'Manual refresh triggered'
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run crawler
+        run: |
+          echo "Starting crawler refresh at $(date)"
+          python run_crawler.py run-once
+          echo "Crawler refresh completed at $(date)"
+        timeout-minutes: 30
+      
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if git diff --quiet data/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Commit and push changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "chore: Auto-refresh crawler data [skip ci]" || true
+          git push
+      
+      - name: Upload data as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: crawler-data-${{ github.run_number }}
+          path: data/
+          retention-days: 7
+      
+      - name: Log summary
+        run: |
+          echo "=== Crawler Refresh Summary ==="
+          echo "Time: $(date)"
+          echo "Status: Success"
+          if [ -f "logs/crawler.log" ]; then
+            echo "=== Latest Logs ==="
+            tail -20 logs/crawler.log
+          fi

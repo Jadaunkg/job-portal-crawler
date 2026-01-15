@@ -1,0 +1,3 @@
+# Render configuration
+PORT=8000
+PYTHONUNBUFFERED=true
