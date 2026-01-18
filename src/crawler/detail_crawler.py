@@ -129,81 +129,182 @@ class DetailCrawler(BaseCrawler):
             'application_fee': '',
             'how_to_apply': '',
             'important_links': [],
+            'links': [],
             'key_details': {},
-            'tables': []
+            'tables': [],
+            'sections': {},
+            'raw_html': ''
         }
         
-        # Extract main content area - try multiple selectors
-        article = (soup.find('article') or 
-                  soup.find('div', class_=['entry-content', 'post-content', 'content']) or
-                  soup.find('main') or
-                  soup.find('div', id='content') or
-                  soup.find('div', class_='site-content'))
+        # Select main content using robust strategy
+        article = self._select_main_content(soup, url)
         
         if not article:
-            logger.warning(f"Could not find main content area for {url}")
+            logger.error(f"Could not find any content area for {url}")
             return details
         
-        # Extract full description/content - get all text from main content area
-        details['full_description'] = article.get_text(separator='\n', strip=True)
+        # Store raw HTML for debugging
+        details['raw_html'] = str(article)[:5000]  # First 5000 chars
         
-        # Also try to find specific content div for cleaner text
-        content_div = article.find('div', class_=['entry-content', 'post-content', 'content'])
-        if content_div:
-            # Use content div text if available (usually cleaner)
-            content_text = content_div.get_text(separator='\n', strip=True)
-            if len(content_text) > len(details['full_description']) * 0.8:  # If similar length, prefer content div
-                details['full_description'] = content_text
+        # Extract full description - comprehensive text extraction
+        details['full_description'] = self._extract_clean_text(article)
+        
+        # Extract sections by headings - comprehensive approach
+        details['sections'] = self._extract_sections_by_headings(article)
         
         # Extract all tables (often contain important information)
         tables = article.find_all('table')
         for idx, table in enumerate(tables):
             table_data = self._extract_table_data(table)
             if table_data:
+                table_html = str(table)[:1000]  # Store HTML snippet
                 details['tables'].append({
                     'index': idx,
-                    'data': table_data
+                    'headers': list(table_data[0].keys()) if table_data else [],
+                    'rows': table_data,
+                    'row_count': len(table_data),
+                    'html_preview': table_html
                 })
+        # Global table fallback if none found in article
+        if not details['tables']:
+            global_tables = soup.find_all('table')
+            for idx, table in enumerate(global_tables):
+                table_data = self._extract_table_data(table)
+                if table_data:
+                    details['tables'].append({
+                        'index': idx,
+                        'headers': list(table_data[0].keys()) if table_data else [],
+                        'rows': table_data,
+                        'row_count': len(table_data)
+                    })
         
         # Extract all links (download links, official website, etc.)
+        seen_urls = set()
         links = article.find_all('a', href=True)
         for link in links:
             link_text = link.get_text(strip=True)
-            link_url = link.get('href', '')
+            link_url = link.get('href', '').strip()
             
-            if link_url and link_text:
-                # Skip navigation and internal links
-                if not any(skip in link_text.lower() for skip in ['home', 'menu', 'search', 'back to']):
-                    details['important_links'].append({
-                        'text': link_text,
-                        'url': link_url
-                    })
+            # Skip empty, duplicates, and navigation links
+            if not link_url or link_url in seen_urls:
+                continue
+            if not link_text or len(link_text) < 2:
+                continue
+            if link_url.startswith('#') or link_url.startswith('javascript:'):
+                continue
+            if any(skip in link_text.lower() for skip in ['home', 'menu', 'search', 'back to', 'previous', 'next']):
+                continue
+            
+            seen_urls.add(link_url)
+            details['important_links'].append({
+                'text': link_text,
+                'url': link_url
+            })
+
+        # Unified links field for consistency
+        details['links'] = list(details['important_links'])
         
-        # Extract key details from headings and paragraphs
-        headings = article.find_all(['h2', 'h3', 'h4', 'strong'])
+        # Extract structured information from sections
+        self._parse_structured_data(details)
+        
+        return details
+    
+    def _extract_clean_text(self, element) -> str:
+        """Extract clean, readable text from HTML element"""
+        # Get all text with newline separators
+        text = element.get_text(separator='\n', strip=True)
+        
+        # Clean up multiple newlines
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        text = '\n'.join(lines)
+        
+        return text
+    
+    def _extract_sections_by_headings(self, article) -> Dict[str, str]:
+        """Extract content organized by section headings"""
+        sections = {}
+        
+        # Find all headings
+        headings = article.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'b'])
+        
         for heading in headings:
-            heading_text = heading.get_text(strip=True).lower()
+            heading_text = heading.get_text(strip=True)
             
-            # Look for common sections
-            if any(keyword in heading_text for keyword in ['important date', 'last date', 'application date']):
-                next_element = heading.find_next(['p', 'ul', 'table'])
-                if next_element:
-                    details['important_dates']['raw'] = next_element.get_text(separator='\n', strip=True)
+            # Skip short headings (likely not section titles)
+            if len(heading_text) < 3:
+                continue
             
-            elif any(keyword in heading_text for keyword in ['eligibility', 'qualification', 'educational']):
-                next_element = heading.find_next(['p', 'ul', 'table'])
-                if next_element:
-                    details['eligibility']['raw'] = next_element.get_text(separator='\n', strip=True)
+            # Extract content after heading until next heading
+            content_parts = []
+            for sibling in heading.find_next_siblings():
+                # Stop at next heading
+                if sibling.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+                    break
+                
+                # Collect text from this element
+                text = sibling.get_text(separator='\n', strip=True)
+                if text:
+                    content_parts.append(text)
             
-            elif any(keyword in heading_text for keyword in ['application fee', 'fee details']):
-                next_element = heading.find_next(['p', 'ul', 'table'])
-                if next_element:
-                    details['application_fee'] = next_element.get_text(separator='\n', strip=True)
+            if content_parts:
+                sections[heading_text] = '\n'.join(content_parts)
+        
+        return sections
+    
+    def _parse_structured_data(self, details: Dict[str, Any]):
+        """Parse structured information from sections and populate specific fields"""
+        sections = details.get('sections', {})
+        
+        # Parse important dates
+        for heading, content in sections.items():
+            heading_lower = heading.lower()
             
-            elif any(keyword in heading_text for keyword in ['how to apply', 'application process']):
-                next_element = heading.find_next(['p', 'ul', 'ol', 'div'])
-                if next_element:
-                    details['how_to_apply'] = next_element.get_text(separator='\n', strip=True)
+            if any(keyword in heading_lower for keyword in ['important date', 'last date', 'application date', 'key date']):
+                details['important_dates'][heading] = content
+                
+            elif any(keyword in heading_lower for keyword in ['eligibility', 'qualification', 'educational', 'age limit']):
+                details['eligibility'][heading] = content
+                
+            elif any(keyword in heading_lower for keyword in ['application fee', 'fee details', 'exam fee']):
+                if not details['application_fee']:
+                    details['application_fee'] = content
+                else:
+                    details['application_fee'] += '\n' + content
+                    
+            elif any(keyword in heading_lower for keyword in ['how to apply', 'application process', 'application procedure']):
+                if not details['how_to_apply']:
+                    details['how_to_apply'] = content
+                else:
+                    details['how_to_apply'] += '\n' + content
+                    
+            elif any(keyword in heading_lower for keyword in ['vacancy', 'post details', 'posts', 'positions']):
+                details['key_details'][heading] = content
+                
+            elif any(keyword in heading_lower for keyword in ['selection', 'exam pattern', 'syllabus']):
+                details['key_details'][heading] = content
+        
+        # If no structured dates found, try to extract from full description
+        if not details['important_dates']:
+            self._extract_dates_from_text(details)
+    
+    def _extract_dates_from_text(self, details: Dict[str, Any]):
+        """Extract date information from text using patterns"""
+        import re
+        text = details.get('full_description', '')
+        
+        # Common date patterns
+        date_patterns = [
+            r'Last Date[:\s]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
+            r'Application (?:Start|Begin)[:\s]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
+            r'Application End[:\s]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
+            r'Exam Date[:\s]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
+        ]
+        
+        for pattern in date_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            if matches:
+                key = pattern.split('[')[0].strip()
+                details['important_dates'][key] = matches[0]
         
         return details
     
@@ -215,30 +316,25 @@ class DetailCrawler(BaseCrawler):
             'result_type': '',
             'exam_name': '',
             'result_links': [],
+            'important_links': [],
+            'links': [],
             'cutoff_marks': {},
             'merit_list': [],
             'important_dates': {},
-            'tables': []
+            'tables': [],
+            'sections': {}
         }
         
-        article = (soup.find('article') or 
-                  soup.find('div', class_=['entry-content', 'post-content', 'content']) or
-                  soup.find('main') or
-                  soup.find('div', id='content') or
-                  soup.find('div', class_='site-content'))
-        
+        # Use same powerful content detection as jobs
+        article = self._select_main_content(soup, url)
         if not article:
             return details
         
-        # Extract full description from main content
-        details['full_description'] = article.get_text(separator='\n', strip=True)
+        # Extract full description
+        details['full_description'] = self._extract_clean_text(article)
         
-        # Extract content from content div if available (usually cleaner)
-        content_div = article.find('div', class_=['entry-content', 'post-content'])
-        if content_div:
-            content_text = content_div.get_text(separator='\n', strip=True)
-            if len(content_text) > len(details['full_description']) * 0.8:
-                details['full_description'] = content_text
+        # Extract sections
+        details['sections'] = self._extract_sections_by_headings(article)
         
         # Extract tables
         tables = article.find_all('table')
@@ -247,20 +343,80 @@ class DetailCrawler(BaseCrawler):
             if table_data:
                 details['tables'].append({
                     'index': idx,
-                    'data': table_data
+                    'headers': list(table_data[0].keys()) if table_data else [],
+                    'rows': table_data,
+                    'row_count': len(table_data)
                 })
+        if not details['tables']:
+            for idx, table in enumerate(soup.find_all('table')):
+                table_data = self._extract_table_data(table)
+                if table_data:
+                    details['tables'].append({
+                        'index': idx,
+                        'headers': list(table_data[0].keys()) if table_data else [],
+                        'rows': table_data,
+                        'row_count': len(table_data)
+                    })
         
-        # Extract download/result links
+        # Extract download/result links (broadened heuristics)
+        seen_urls = set()
         links = article.find_all('a', href=True)
         for link in links:
-            link_text = link.get_text(strip=True).lower()
-            link_url = link.get('href', '')
-            
-            if any(keyword in link_text for keyword in ['result', 'download', 'pdf', 'merit list', 'cutoff']):
+            link_text_full = link.get_text(strip=True)
+            link_text = link_text_full.lower()
+            link_url = link.get('href', '').strip()
+
+            if not link_url or link_url in seen_urls:
+                continue
+
+            # Skip anchors with no meaningful text and no meaningful href
+            if not link_text_full and not link_url:
+                continue
+
+            href_lower = link_url.lower()
+
+            text_keywords = [
+                'result', 'download', 'pdf', 'merit', 'list', 'cutoff', 'answer key',
+                'click here', 'here', 'view', 'check', 'score', 'marks'
+            ]
+            href_keywords = [
+                'pdf', 'download', 'wp-content/uploads', 'drive.google.com', 'docs.google.com',
+                '/result', '/results', 'scorecard', 'mark', 'merit', 'list', 'cutoff'
+            ]
+
+            is_match = (
+                any(k in link_text for k in text_keywords) or
+                any(k in href_lower for k in href_keywords)
+            )
+
+            if is_match:
+                seen_urls.add(link_url)
                 details['result_links'].append({
-                    'text': link.get_text(strip=True),
+                    'text': link_text_full,
                     'url': link_url
                 })
+
+        # Also collect general anchors as important_links (similar to jobs)
+        general_seen = set(l['url'] for l in details['result_links'])
+        for link in article.find_all('a', href=True):
+            link_text = link.get_text(strip=True)
+            link_url = link.get('href', '').strip()
+            if not link_url or link_url in general_seen:
+                continue
+            if not link_text or len(link_text) < 2:
+                continue
+            if link_url.startswith('#') or link_url.startswith('javascript:'):
+                continue
+            if any(skip in link_text.lower() for skip in ['home', 'menu', 'search', 'back to', 'previous', 'next']):
+                continue
+            general_seen.add(link_url)
+            details['important_links'].append({'text': link_text, 'url': link_url})
+
+        # Unified links union (dedupe by URL)
+        combined = {}
+        for link in details['result_links'] + details['important_links']:
+            combined[link['url']] = link
+        details['links'] = list(combined.values())
         
         return details
     
@@ -272,30 +428,25 @@ class DetailCrawler(BaseCrawler):
             'exam_name': '',
             'exam_date': '',
             'download_links': [],
+            'important_links': [],
+            'links': [],
             'important_instructions': '',
             'exam_centers': [],
             'important_dates': {},
-            'tables': []
+            'tables': [],
+            'sections': {}
         }
         
-        article = (soup.find('article') or 
-                  soup.find('div', class_=['entry-content', 'post-content', 'content']) or
-                  soup.find('main') or
-                  soup.find('div', id='content') or
-                  soup.find('div', class_='site-content'))
-        
+        # Use same powerful content detection
+        article = self._select_main_content(soup, url)
         if not article:
             return details
         
-        # Extract full description from main content
-        details['full_description'] = article.get_text(separator='\n', strip=True)
+        # Extract full description
+        details['full_description'] = self._extract_clean_text(article)
         
-        # Extract content from content div if available (usually cleaner)
-        content_div = article.find('div', class_=['entry-content', 'post-content'])
-        if content_div:
-            content_text = content_div.get_text(separator='\n', strip=True)
-            if len(content_text) > len(details['full_description']) * 0.8:
-                details['full_description'] = content_text
+        # Extract sections
+        details['sections'] = self._extract_sections_by_headings(article)
         
         # Extract tables
         tables = article.find_all('table')
@@ -304,22 +455,107 @@ class DetailCrawler(BaseCrawler):
             if table_data:
                 details['tables'].append({
                     'index': idx,
-                    'data': table_data
+                    'headers': list(table_data[0].keys()) if table_data else [],
+                    'rows': table_data,
+                    'row_count': len(table_data)
                 })
+        if not details['tables']:
+            for idx, table in enumerate(soup.find_all('table')):
+                table_data = self._extract_table_data(table)
+                if table_data:
+                    details['tables'].append({
+                        'index': idx,
+                        'headers': list(table_data[0].keys()) if table_data else [],
+                        'rows': table_data,
+                        'row_count': len(table_data)
+                    })
         
-        # Extract download links
+        # Extract download links with broadened heuristics (similar to results)
+        seen_urls = set()
         links = article.find_all('a', href=True)
         for link in links:
-            link_text = link.get_text(strip=True).lower()
-            link_url = link.get('href', '')
-            
-            if any(keyword in link_text for keyword in ['admit card', 'download', 'hall ticket', 'pdf']):
+            link_text_full = link.get_text(strip=True)
+            link_text = link_text_full.lower()
+            link_url = link.get('href', '').strip()
+
+            if not link_url or link_url in seen_urls:
+                continue
+
+            href_lower = link_url.lower()
+            text_keywords = [
+                'admit card', 'download', 'hall ticket', 'pdf', 'call letter',
+                'click here', 'here', 'view', 'check'
+            ]
+            href_keywords = [
+                'pdf', 'download', 'wp-content/uploads', 'drive.google.com', 'docs.google.com',
+                'admit', 'hall', 'ticket', 'call-letter'
+            ]
+
+            is_match = (
+                any(k in link_text for k in text_keywords) or
+                any(k in href_lower for k in href_keywords)
+            )
+            if is_match:
+                seen_urls.add(link_url)
                 details['download_links'].append({
-                    'text': link.get_text(strip=True),
+                    'text': link_text_full,
                     'url': link_url
                 })
+
+        # Always include general anchors as important_links (not only fallback)
+        general_seen = set(l['url'] for l in details['download_links'])
+        for link in article.find_all('a', href=True):
+            link_text_full = link.get_text(strip=True)
+            link_url = link.get('href', '').strip()
+            if link_url and link_text_full and link_url not in general_seen:
+                if not (link_url.startswith('#') or link_url.startswith('javascript:')):
+                    general_seen.add(link_url)
+                    details['important_links'].append({
+                        'text': link_text_full,
+                        'url': link_url
+                    })
+
+        # Unified links union (dedupe by URL)
+        combined = {}
+        for link in details['download_links'] + details['important_links']:
+            combined[link['url']] = link
+        details['links'] = list(combined.values())
         
         return details
+
+    def _select_main_content(self, soup: BeautifulSoup, url: str):
+        """Robustly select the main content region from a page."""
+        content_selectors = [
+            ('div', {'class': 'site-content'}),
+            ('div', {'class': 'content-area'}),
+            ('article', {}),
+            ('div', {'class': 'entry-content'}),
+            ('div', {'class': 'post-content'}),
+            ('main', {}),
+            ('div', {'id': 'content'}),
+        ]
+        for tag, attrs in content_selectors:
+            candidate = soup.find(tag, attrs) if attrs else soup.find(tag)
+            if candidate and len(candidate.get_text(strip=True)) > 300:
+                return candidate
+        # Keyword class selection, choose largest
+        candidates = []
+        for div in soup.find_all('div'):
+            div_class = ' '.join(div.get('class', [])).lower()
+            if any(k in div_class for k in ['content', 'post', 'article', 'entry']):
+                tlen = len(div.get_text(strip=True))
+                if tlen > 300:
+                    candidates.append((tlen, div))
+        if candidates:
+            candidates.sort(key=lambda x: x[0], reverse=True)
+            return candidates[0][1]
+        # Fallback to body cleaned
+        body = soup.find('body')
+        if body:
+            for tag in body.find_all(['header', 'footer', 'nav', 'aside']):
+                tag.decompose()
+            return body
+        return None
     
     def _extract_table_data(self, table) -> List[Dict[str, str]]:
         """
