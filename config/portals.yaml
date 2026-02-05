@@ -5,26 +5,54 @@ portals:
   # Sarkari Results - Job Notification Portal
   - name: "Sarkari Results"
     enabled: true
-    base_url: "https://www.sarkariresult.com.cm"
+    base_url: "https://sarkariresult.com.cm"
     description: "Sarkari job result and admit card notifications"
     
-    # Categories to scrape
+    # Enable homepage mode to scrape all categories from the homepage
+    # This is the recommended mode as it gets the latest items first
+    homepage_mode: true
+    homepage_url: "https://sarkariresult.com.cm/"
+    
+    # Homepage section configuration
+    # The crawler will look for sections with these header texts
+    homepage_sections:
+      results:
+        header_texts: ["Results", "Result"]
+      admit_cards:
+        header_texts: ["Admit Cards", "Admit Card"]
+      jobs:
+        header_texts: ["Latest Jobs", "Jobs", "Latest Job"]
+    
+    # Selectors for homepage parsing
+    homepage_selectors:
+      # Featured items at the top of the page
+      featured_items: "div.gb-grid-wrapper p.gb-headline a"
+      # Section headers
+      section_header: "p.gb-headline"
+      # Section container (parent of header)
+      section_container: "div.gb-inside-container"
+      # List of items within a section
+      items_list: "ul.wp-block-latest-posts__list li a.wp-block-latest-posts__post-title"
+      # Alternative list selector
+      items_list_alt: "ul.wp-block-latest-posts li a"
+    
+    # Legacy category-specific URLs (used when homepage_mode is false)
     categories:
       jobs:
         enabled: true
-        url: "https://www.sarkariresult.com.cm/latest-jobs/"
+        url: "https://sarkariresult.com.cm/latest-jobs/"
         selectors:
-          container: "ul.latest-posts-last-date li"
-          title: "a"
-          link: "a"
+          container: "ul.wp-block-latest-posts__list li"
+          title: "a.wp-block-latest-posts__post-title"
+          link: "a.wp-block-latest-posts__post-title"
           organization: null
           posted_date: null
       
       results:
         enabled: true
-        url: "https://www.sarkariresult.com.cm/result/"
+        url: "https://sarkariresult.com.cm/result/"
         selectors:
-          container: "ul.wp-block-latest-posts li"
+          container: "ul.wp-block-latest-posts__list li"
           title: "a.wp-block-latest-posts__post-title"
           link: "a.wp-block-latest-posts__post-title"
           organization: null
@@ -35,9 +63,9 @@ portals:
       
       admit_cards:
         enabled: true
-        url: "https://www.sarkariresult.com.cm/admit-card/"
+        url: "https://sarkariresult.com.cm/admit-card/"
         selectors:
-          container: "ul.wp-block-latest-posts li"
+          container: "ul.wp-block-latest-posts__list li"
           title: "a.wp-block-latest-posts__post-title"
           link: "a.wp-block-latest-posts__post-title"
           exam_date: null
@@ -71,14 +99,9 @@ portals:
           next_button_selector: "li.next > a"
           max_pages: 3
 
-  # Add more portals as needed
-  # - name: "Portal3"
-  #   enabled: false
-  #   ...
-
 # Notes:
 # - Set 'enabled: true' only for portals you want to actively crawl
+# - Set 'homepage_mode: true' to scrape all categories from the homepage
 # - Selectors use CSS selector syntax
 # - Use browser DevTools to inspect and find correct selectors
 # - Test selectors before enabling a portal
-# - Some portals may require JavaScript rendering (consider Selenium)

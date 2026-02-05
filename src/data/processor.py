@@ -100,37 +100,60 @@ class DataProcessor:
             Dictionary with processing statistics
         """
         if not jobs:
-            return {'total': 0, 'new': 0, 'duplicates': 0}
+            return {'total': 0, 'new': 0, 'duplicates': 0, 'updated': 0}
         
         self.logger.info(f"Processing {len(jobs)} job entries")
         
         new_jobs = []
         duplicate_count = 0
+        updated_count = 0
+        
+        # Get existing jobs from database for duplicate checking
+        existing_jobs = self.db.get_all('jobs')
+        existing_by_id = {job.get('id'): job for job in existing_jobs}
         
         for job in jobs:
             # Validate
             if not self._validate_job(job):
                 continue
             
-            # Check for duplicates
-            if job.id in self._id_cache.get('jobs', set()):
-                duplicate_count += 1
-                self.logger.debug(f"Duplicate job: {job.title}")
-                continue
+            job_dict = job.to_dict()
             
-            # Add to new jobs list
-            new_jobs.append(job.to_dict())
-            self._id_cache['jobs'].add(job.id)
+            # Check for duplicates
+            if job.id in existing_by_id:
+                # It's a duplicate - mark it with metadata
+                old_job = existing_by_id[job.id]
+                job_dict['is_new'] = False
+                job_dict['is_duplicate'] = True
+                job_dict['previous_discovered_at'] = old_job.get('discovered_at', '')
+                job_dict['times_seen'] = old_job.get('times_seen', 1) + 1
+                
+                # Remove from existing (will be re-added at top)
+                existing_jobs = [j for j in existing_jobs if j.get('id') != job.id]
+                
+                duplicate_count += 1
+                updated_count += 1
+                self.logger.debug(f"Duplicate job moved to top: {job.title}")
+            else:
+                # New job
+                job_dict['is_new'] = True
+                job_dict['is_duplicate'] = False
+                job_dict['times_seen'] = 1
+                self._id_cache['jobs'].add(job.id)
+            
+            new_jobs.append(job_dict)
         
-        # Store in database
+        # Store in database: new jobs at top + remaining old jobs
         if new_jobs:
-            self.db.insert_many('jobs', new_jobs)
-            self.logger.info(f"Stored {len(new_jobs)} new jobs")
+            all_jobs = new_jobs + existing_jobs
+            self.db._write_file(self.db.files['jobs'], all_jobs)
+            self.logger.info(f"Stored {len(new_jobs)} jobs ({len(new_jobs) - updated_count} new, {updated_count} updated)")
         
         return {
             'total': len(jobs),
-            'new': len(new_jobs),
-            'duplicates': duplicate_count
+            'new': len(new_jobs) - updated_count,
+            'duplicates': duplicate_count,
+            'updated': updated_count
         }
     
     def process_results(self, results: List[ResultEntry]) -> Dict[str, Any]:
@@ -144,36 +167,59 @@ class DataProcessor:
             Dictionary with processing statistics
         """
         if not results:
-            return {'total': 0, 'new': 0, 'duplicates': 0}
+            return {'total': 0, 'new': 0, 'duplicates': 0, 'updated': 0}
         
         self.logger.info(f"Processing {len(results)} result entries")
         
         new_results = []
         duplicate_count = 0
+        updated_count = 0
+        
+        # Get existing results from database
+        existing_results = self.db.get_all('results')
+        existing_by_id = {r.get('id'): r for r in existing_results}
         
         for result in results:
             # Validate
             if not self._validate_result(result):
                 continue
             
-            # Check for duplicates
-            if result.id in self._id_cache.get('results', set()):
-                duplicate_count += 1
-                continue
+            result_dict = result.to_dict()
             
-            # Add to new results list
-            new_results.append(result.to_dict())
-            self._id_cache['results'].add(result.id)
+            # Check for duplicates
+            if result.id in existing_by_id:
+                # It's a duplicate - mark with metadata
+                old_result = existing_by_id[result.id]
+                result_dict['is_new'] = False
+                result_dict['is_duplicate'] = True
+                result_dict['previous_discovered_at'] = old_result.get('discovered_at', '')
+                result_dict['times_seen'] = old_result.get('times_seen', 1) + 1
+                
+                # Remove from existing (will be re-added at top)
+                existing_results = [r for r in existing_results if r.get('id') != result.id]
+                
+                duplicate_count += 1
+                updated_count += 1
+            else:
+                # New result
+                result_dict['is_new'] = True
+                result_dict['is_duplicate'] = False
+                result_dict['times_seen'] = 1
+                self._id_cache['results'].add(result.id)
+            
+            new_results.append(result_dict)
         
-        # Store in database
+        # Store: new results at top + remaining old results
         if new_results:
-            self.db.insert_many('results', new_results)
-            self.logger.info(f"Stored {len(new_results)} new results")
+            all_results = new_results + existing_results
+            self.db._write_file(self.db.files['results'], all_results)
+            self.logger.info(f"Stored {len(new_results)} results ({len(new_results) - updated_count} new, {updated_count} updated)")
         
         return {
             'total': len(results),
-            'new': len(new_results),
-            'duplicates': duplicate_count
+            'new': len(new_results) - updated_count,
+            'duplicates': duplicate_count,
+            'updated': updated_count
         }
     
     def process_admit_cards(self, admit_cards: List[AdmitCardEntry]) -> Dict[str, Any]:
@@ -187,36 +233,59 @@ class DataProcessor:
             Dictionary with processing statistics
         """
         if not admit_cards:
-            return {'total': 0, 'new': 0, 'duplicates': 0}
+            return {'total': 0, 'new': 0, 'duplicates': 0, 'updated': 0}
         
         self.logger.info(f"Processing {len(admit_cards)} admit card entries")
         
         new_cards = []
         duplicate_count = 0
+        updated_count = 0
+        
+        # Get existing admit cards from database
+        existing_cards = self.db.get_all('admit_cards')
+        existing_by_id = {c.get('id'): c for c in existing_cards}
         
         for card in admit_cards:
             # Validate
             if not self._validate_admit_card(card):
                 continue
             
-            # Check for duplicates
-            if card.id in self._id_cache.get('admit_cards', set()):
-                duplicate_count += 1
-                continue
+            card_dict = card.to_dict()
             
-            # Add to new cards list
-            new_cards.append(card.to_dict())
-            self._id_cache['admit_cards'].add(card.id)
+            # Check for duplicates
+            if card.id in existing_by_id:
+                # It's a duplicate - mark with metadata
+                old_card = existing_by_id[card.id]
+                card_dict['is_new'] = False
+                card_dict['is_duplicate'] = True
+                card_dict['previous_discovered_at'] = old_card.get('discovered_at', '')
+                card_dict['times_seen'] = old_card.get('times_seen', 1) + 1
+                
+                # Remove from existing (will be re-added at top)
+                existing_cards = [c for c in existing_cards if c.get('id') != card.id]
+                
+                duplicate_count += 1
+                updated_count += 1
+            else:
+                # New admit card
+                card_dict['is_new'] = True
+                card_dict['is_duplicate'] = False
+                card_dict['times_seen'] = 1
+                self._id_cache['admit_cards'].add(card.id)
+            
+            new_cards.append(card_dict)
         
-        # Store in database
+        # Store: new cards at top + remaining old cards
         if new_cards:
-            self.db.insert_many('admit_cards', new_cards)
-            self.logger.info(f"Stored {len(new_cards)} new admit cards")
+            all_cards = new_cards + existing_cards
+            self.db._write_file(self.db.files['admit_cards'], all_cards)
+            self.logger.info(f"Stored {len(new_cards)} admit cards ({len(new_cards) - updated_count} new, {updated_count} updated)")
         
         return {
             'total': len(admit_cards),
-            'new': len(new_cards),
-            'duplicates': duplicate_count
+            'new': len(new_cards) - updated_count,
+            'duplicates': duplicate_count,
+            'updated': updated_count
         }
     
     def process_notifications(self, notifications: List[NotificationEntry]) -> Dict[str, Any]:

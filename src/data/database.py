@@ -224,7 +224,7 @@ class JSONDatabase:
         file_path = self.files[category]
         data = self._read_file(file_path)
         
-        # Add new entries at the beginning (newest first)
+        # Add new entries at the beginning (in the order received)
         data = entries + data
         
         # Write back to file
